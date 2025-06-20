@@ -1,3 +1,6 @@
 .iml
 .venv
 .idea
+
+*.json
+vehicles_data_*.json
