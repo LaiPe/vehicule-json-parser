@@ -1,104 +1,115 @@
-# Vehicle JSON parser
+# Vehicle JSON Parser
 
-A Python script to extract and transform specific attributes from electric vehicle datasets, with automatic unit conversion and attribute renaming.
+Un script Python pour extraire et transformer des attributs spécifiques à partir de jeux de données de véhicules électriques, avec conversion automatique d'unités et calculs dérivés.
 
-## Overview
+## Aperçu
 
-This script processes JSON datasets containing electric vehicle specifications and extracts a subset of relevant attributes. It automatically converts energy consumption from kWh/100 miles to kWh/100 km and renames attributes for better clarity.
+Ce script traite des jeux de données JSON contenant les spécifications de véhicules électriques et extrait un sous-ensemble d'attributs pertinents. Il convertit automatiquement la consommation énergétique de kWh/100 miles vers kWh/100 km et calcule la capacité de la batterie basée sur les données de charge.
 
-## Data Source
+## Source des données
 
-The script is designed to work with electric vehicle data from:
-- **Source**: https://public.opendatasoft.com/explore/dataset/all-vehicles-model/information/?flg=fr-fr&sort=modifiedon&refine.fueltype=Electricity
-- **Format**: JSON array of vehicle objects
-- **Content**: EPA vehicle certification data with technical specifications
+Le script est conçu pour fonctionner avec des données de véhicules électriques provenant de :
+- **Source** : https://public.opendatasoft.com/explore/dataset/all-vehicles-model/information/?flg=fr-fr&sort=modifiedon&refine.fueltype=Electricity
+- **Format** : Tableau JSON d'objets véhicules
+- **Contenu** : Données de certification EPA de véhicules avec spécifications techniques
 
-## Features
+## Fonctionnalités
 
-- Extracts 13 specific attributes from vehicle data
-- Converts energy consumption from Imperial (kWh/100 miles) to Metric (kWh/100 km)
-- Renames attributes for improved clarity
-- Handles missing values gracefully
-- Provides data preview and file size statistics
-- Interactive command-line interface
+- Extrait 3 attributs de base des données de véhicules (make, model, year)
+- Convertit la consommation énergétique de l'impérial (kWh/100 miles) vers le métrique (kWh/100 km)
+- Calcule automatiquement la capacité de la batterie basée sur le temps de charge et la puissance
+- Gère les valeurs manquantes de manière élégante
+- Fournit un aperçu des données et des statistiques de taille de fichier
+- Interface en ligne de commande interactive en français
 
-## Extracted Attributes
+## Attributs extraits
 
-| Original Attribute | Output Attribute | Description |
+| Attribut original | Attribut de sortie | Description |
 |-------------------|------------------|-------------|
-| `make` | `make` | Vehicle manufacturer |
-| `model` | `model` | Complete model name |
-| `basemodel` | `basemodel` | Base model name |
-| `year` | `year` | Model year |
-| `combe` | `cons_kwh_per_100km` | Energy consumption (converted to kWh/100km) |
-| `range` | `range` | Vehicle range in miles |
-| `charge240` | `time_charge240` | Standard 240V charge time (hours) |
-| `charge240b` | `time_charge240b` | Fast 240V charge time (hours) |
-| `c240dscr` | `c240dscr` | Standard charger description |
-| `c240bdscr` | `c240bdscr` | Fast charger description |
-| `tcharger` | `tcharger` | Turbo charger info |
-| `scharger` | `scharger` | Super charger info |
-| `modifiedon` | `modifiedon` | Last modification date |
+| `make` | `make` | Fabricant du véhicule |
+| `model` | `model` | Nom complet du modèle |
+| `year` | `year` | Année du modèle |
+| `combe` | `consumption_kwh_per_100km` | Consommation énergétique (convertie en kWh/100km) |
+| `charge240` + calcul | `battery_capacity_kwh` | Capacité de la batterie calculée (kWh) |
 
-## Requirements
+## Calculs automatiques
 
-- Python 3.6 or higher
-- No external dependencies (uses only standard library)
+Le script effectue deux calculs automatiques :
 
-## Usage
-
-1. **Prepare your data file**:
-    - Download the dataset from the source URL above
-    - Save it as `vehicles_data_original.json` or use a custom filename
-
-2. **Run the script**:
-   ```bash
-   python extract_vehicle_data.py
+1. **Conversion de consommation** : Convertit `combe` (kWh/100 miles) vers kWh/100 km
+2. **Capacité de batterie** : Calcule la capacité en utilisant la formule :
+   ```
+   Capacité (kWh) = Temps de charge (heures) × Puissance de charge (7.2 kW)
    ```
 
-3. **Follow the prompts**:
-    - Enter input filename (default: `vehicles_data_original.json`)
-    - Enter output filename (default: `vehicles_data_extracted.json`)
-    - Choose whether to preview the results
+## Prérequis
 
-## Example Output
+- Python 3.6 ou supérieur
+- Aucune dépendance externe (utilise uniquement la bibliothèque standard)
+
+## Utilisation
+
+1. **Préparez votre fichier de données** :
+    - Téléchargez le jeu de données depuis l'URL source ci-dessus
+    - Sauvegardez-le sous `vehicles_data_original.json` ou utilisez un nom personnalisé
+
+2. **Exécutez le script** :
+   ```bash
+   python vehicule-json-parser.py
+   ```
+
+3. **Suivez les invites** :
+    - Entrez le nom du fichier d'entrée (défaut : `vehicles_data_original.json`)
+    - Entrez le nom du fichier de sortie (défaut : `vehicles_data_extracted.json`)
+    - Choisissez si vous voulez prévisualiser les résultats
+
+## Exemple de sortie
 
 ```json
 [
   {
     "make": "Tesla",
     "model": "Model S AWD - P100D",
-    "basemodel": "Model S",
     "year": "2017",
-    "cons_kwh_per_100km": 21.75,
-    "range": 315,
-    "time_charge240": 12,
-    "time_charge240b": 4.75,
-    "c240dscr": "standard charger",
-    "c240bdscr": "80 amp dual charger",
-    "tcharger": null,
-    "scharger": null,
-    "modifiedon": "2022-02-02"
+    "consumption_kwh_per_100km": 21.75,
+    "battery_capacity_kwh": 86.4
+  },
+  {
+    "make": "Nissan",
+    "model": "LEAF",
+    "year": "2018",
+    "consumption_kwh_per_100km": 18.65,
+    "battery_capacity_kwh": 43.2
   }
 ]
 ```
 
-## Unit Conversion
+## Conversions d'unités
 
-The script automatically converts energy consumption using the formula:
+Le script convertit automatiquement la consommation énergétique en utilisant la formule :
 ```
 kWh/100km = kWh/100miles × (100 ÷ 160.9344)
 ```
 
-Where 160.9344 km = 100 miles (1 mile = 1.609344 km)
+Où 160.9344 km = 100 miles (1 mile = 1.609344 km)
 
-## Error Handling
+## Calcul de la capacité de batterie
 
-- Invalid JSON files are detected and reported
-- Missing attributes are set to `null` in the output
-- Conversion errors result in `null` values
-- File I/O errors are caught and displayed
+La capacité de la batterie est calculée en utilisant :
+```
+Capacité (kWh) = Temps de charge 240V (heures) × 7.2 kW
+```
 
-## License
+*Note : Une puissance de charge de 7.2 kW est assumée pour les calculs.*
 
-This script is provided as-is for data processing purposes. Please respect the terms of use of the original data source.
+## Gestion des erreurs
+
+- Les fichiers JSON invalides sont détectés et signalés
+- Les attributs manquants sont traités gracieusement avec des messages d'avertissement
+- Les erreurs de conversion résultent en valeurs `null`
+- Les erreurs d'E/S de fichier sont capturées et affichées
+- Les véhicules sans données essentielles (`combe` ou `range`) sont ignorés avec des messages informatifs
+
+## Licence
+
+Ce script est fourni tel quel à des fins de traitement de données. Veuillez respecter les conditions d'utilisation de la source de données originale.

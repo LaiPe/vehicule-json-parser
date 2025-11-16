@@ -25,6 +25,25 @@ def convert_kwh_per_100miles_to_100km(kwh_per_100miles: float) -> float | None:
 
     return round(kwh_per_100km, 2)
 
+def calculate_battery_capacity(charge240v: float, power_charge: float) -> float | None:
+    """
+    Calcule la capacité de la batterie en kWh
+
+    Args:
+        charge240v (float): Temps de charge à 240V en heures
+        power_charge (float): Puissance de charge en kW
+
+    Returns:
+        float: Capacité de la batterie en kWh (arrondie à 2 décimales)
+    """
+    if charge240v is None or power_charge is None:
+        return None
+
+    battery_capacity = charge240v * power_charge
+
+    return round(battery_capacity, 2)
+
+
 def extract_vehicle_attributes(input_file: str, output_file: str) -> None:
     """
     Extrait les attributs spécifiés des données de véhicules électriques
@@ -40,15 +59,7 @@ def extract_vehicle_attributes(input_file: str, output_file: str) -> None:
     attributes_mapping = {
         'make': None,
         'model': None,
-        'basemodel': None,
         'year': None,
-        'combe': 'cons_kwh_per_100km',      # Consommation électrique combinée (avec conversion)
-        'range': None,           # Autonomie
-        'charge240': 'time_charge240',       # Temps recharge 240V standard
-        'charge240b': 'time_charge240b',     # Temps recharge 240V rapide
-        'c240dscr': None,        # Description chargeur 240V standard
-        'c240bdscr': None,       # Description chargeur 240V rapide
-        'modifiedon': None       # Date de modification
     }
 
     try:
@@ -74,18 +85,28 @@ def extract_vehicle_attributes(input_file: str, output_file: str) -> None:
             # Création du nouvel objet avec les attributs sélectionnés
             extracted_vehicle = {}
 
+            # Copie des attributs spécifiés
             for original_attr, output_attr in attributes_mapping.items():
                 # Récupération de la valeur (None si l'attribut n'existe pas)
                 value = vehicle.get(original_attr, None)
 
-                # Traitement spécial pour la consommation électrique (conversion d'unité)
-                if original_attr == 'combe' and value is not None:
-                    value = convert_kwh_per_100miles_to_100km(float(value))
-
-
                 # Utilise le nom de sortie spécifié ou garde le nom original
                 final_attr_name = output_attr if output_attr is not None else original_attr
                 extracted_vehicle[final_attr_name] = value
+            
+            # Calcul de la consommation convertie
+            if not 'combe' in vehicle:
+                print(f"⚠️  Élément {i} : pas de consommation 'combe'")
+                continue
+            cons_kwh_per_100km = convert_kwh_per_100miles_to_100km(vehicle.get('combe'))
+            extracted_vehicle['consumption_kwh_per_100km'] = cons_kwh_per_100km
+
+            # Calcul de la capacité de la batterie
+            if not 'range' in vehicle:
+                print(f"⚠️  Élément {i} : pas d'autonomie 'range'")
+                continue
+            battery_capacity = calculate_battery_capacity(vehicle.get('charge240'), 7.2)  # Supposons une puissance de charge de 7.2 kW
+            extracted_vehicle['battery_capacity_kwh'] = battery_capacity
 
             extracted_data.append(extracted_vehicle)
 
